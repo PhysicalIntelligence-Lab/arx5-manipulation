@@ -5,10 +5,9 @@ import numpy as np
 import click
 import matplotlib.pyplot as plt
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/arx5-sdk/python"
 sys.path.append(ROOT_DIR)
 os.chdir(ROOT_DIR)
-os.chdir("arx5-sdk/python")
 
 from arx5_interface import Arx5CartesianController, EEFState, Gain
 
@@ -17,7 +16,7 @@ from peripherals.keystroke_counter import KeystrokeCounter, KeyCode
 
 
 
-def start_torque_data(controller: Arx5CartesianController, data_file: str):
+def collet_torque_data(controller: Arx5CartesianController, data_file: str):
     controller.reset_to_home()
 
     controller_config = controller.get_controller_config()
@@ -54,20 +53,21 @@ def start_torque_data(controller: Arx5CartesianController, data_file: str):
                     {
                         "pose_6d": state.pose_6d().copy(),
                         "gripper_pos": state.gripper_pos,
-                        "gripper_torque": state.gripper_torque()
+                        "gripper_torque": state.gripper_torque
                     }
                 )
                 time.sleep(controller_config.controller_dt)
 
 def plot_torque(data_file: str):
-    data = np.load(data_file, encoding = "latin1")
+    data = np.load(data_file, allow_pickle=True)
     torque = []
     time_stamp = []
     curr_time = 0
-    for info in range(data):
+    for info in data:
         torque.append(info["gripper_torque"])
         time_stamp.append(curr_time)
         curr_time += 1
+    # print(torque)
     plt.plot(time_stamp, torque)
     plt.show()
 
@@ -80,7 +80,8 @@ def main(model: str, interface: str, urdf_path: str):
 
     np.set_printoptions(precision=4, suppress=True)
     os.makedirs("data", exist_ok=True)
-    get_torque_data(controller, "data/teach_traj.npy")
+    collet_torque_data(controller, "data/teach_traj.npy")
+    plot_torque("data/teach_traj.npy")
 
 if __name__ == "__main__":
     main()
