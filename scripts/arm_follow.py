@@ -61,7 +61,9 @@ def main(model: str):
                 # joint_state = controller0.get_state() 
                 # controller1.set_joint_cmd(joint_state)
                 eef_state = controller0.get_eef_state()
+                eef_state.timestamp = 0.0
                 controller1.set_eef_cmd(eef_state)
+
                 time.sleep(controller1_config.controller_dt)
                 
 
