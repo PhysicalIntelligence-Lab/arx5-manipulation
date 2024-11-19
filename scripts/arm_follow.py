@@ -17,10 +17,10 @@ def main(model: str):
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
     interface1 = "can1"
-    # arx5_0 = arx5.Arx5JointController(model, interface0)
-    # arx5_1 = arx5.Arx5JointController(model, interface1)
-    controller0 = arx5.Arx5JointController(model, interface0)
-    controller1 = arx5.Arx5JointController(model, interface1)
+    controller0 = arx5.Arx5CartesianController(model, interface0, "../models/arx5.urdf")
+    controller1 = arx5.Arx5CartesianController(model, interface1, "../models/arx5.urdf")
+    # controller0 = arx5.Arx5JointController(model, interface0)
+    # controller1 = arx5.Arx5JointController(model, interface1)
     robot0_config = controller0.get_robot_config()
     controller0_config = controller1.get_controller_config()
     robot1_config = controller0.get_robot_config()
@@ -58,8 +58,10 @@ def main(model: str):
                     controller1.reset_to_home()
                     return
             if following_started:
-                joint_state = controller0.get_state() 
-                controller1.set_joint_cmd(joint_state)
+                # joint_state = controller0.get_state() 
+                # controller1.set_joint_cmd(joint_state)
+                eef_state = controller0.get_eef_state()
+                controller1.set_eef_cmd(eef_state)
                 time.sleep(controller1_config.controller_dt)
                 
 
