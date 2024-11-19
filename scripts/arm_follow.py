@@ -13,15 +13,14 @@ from peripherals.keystroke_counter import KeystrokeCounter, KeyCode
 
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
-@click.option("--urdf_path", "-u", default="../models/arx5.urdf", help="URDF file path")
 def main(model: str, urdf_path: str):
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
     interface1 = "can1"
     # arx5_0 = arx5.Arx5JointController(model, interface0)
     # arx5_1 = arx5.Arx5JointController(model, interface1)
-    controller0 = arx5.Arx5JointController(model, interface0, urdf_path)
-    controller1 = arx5.Arx5jointController(model, interface1, urdf_path)
+    controller0 = arx5.Arx5JointController(model, interface0)
+    controller1 = arx5.Arx5jointController(model, interface1)
     robot0_config = controller0.get_robot_config()
     controller0_config = controller1.get_controller_config()
     robot1_config = controller0.get_robot_config()
