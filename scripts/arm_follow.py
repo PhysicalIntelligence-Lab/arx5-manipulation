@@ -20,7 +20,7 @@ def main(model: str):
     # arx5_0 = arx5.Arx5JointController(model, interface0)
     # arx5_1 = arx5.Arx5JointController(model, interface1)
     controller0 = arx5.Arx5JointController(model, interface0)
-    controller1 = arx5.Arx5jointController(model, interface1)
+    controller1 = arx5.Arx5JointController(model, interface1)
     robot0_config = controller0.get_robot_config()
     controller0_config = controller1.get_controller_config()
     robot1_config = controller0.get_robot_config()
