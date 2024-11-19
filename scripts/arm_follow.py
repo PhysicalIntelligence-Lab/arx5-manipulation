@@ -28,10 +28,10 @@ def main(model: str):
 
     # controller0.enable_background_send_recv()
     controller0.reset_to_home()
-    controller0.enable_gravity_compensation("../models/arx5.urdf")
+    # controller0.enable_gravity_compensation("../models/arx5.urdf")
     # controller1.enable_background_send_recv()
     controller1.reset_to_home()
-    controller1.enable_gravity_compensation("../models/arx5.urdf")
+    # controller1.enable_gravity_compensation("../models/arx5.urdf")
 
     print("Following mode ready. Press 's' to start.")
 
