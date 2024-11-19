@@ -13,7 +13,7 @@ from peripherals.keystroke_counter import KeystrokeCounter, KeyCode
 
 @click.command()
 @click.argument("model")  # ARX arm model: X5 or L5
-def main(model: str, urdf_path: str):
+def main(model: str):
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
     interface1 = "can1"
