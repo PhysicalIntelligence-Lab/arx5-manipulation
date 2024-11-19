@@ -40,7 +40,7 @@ def main(model: str):
         while True:
             press_events = key_counter.get_press_events()
             for key_stroke in press_events:
-                if key_stroke == KeyCode(char="t"):
+                if key_stroke == KeyCode(char="s"):
                     if following_started:
                         print(f"Following is already started!")
                         continue
