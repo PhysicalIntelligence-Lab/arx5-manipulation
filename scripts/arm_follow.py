@@ -26,10 +26,10 @@ def main(model: str):
     robot1_config = controller0.get_robot_config()
     controller1_config = controller1.get_controller_config()
 
-    controller0.enable_background_send_recv()
+    # controller0.enable_background_send_recv()
     controller0.reset_to_home()
     controller0.enable_gravity_compensation("../models/arx5.urdf")
-    controller1.enable_background_send_recv()
+    # controller1.enable_background_send_recv()
     controller1.reset_to_home()
     controller1.enable_gravity_compensation("../models/arx5.urdf")
 
