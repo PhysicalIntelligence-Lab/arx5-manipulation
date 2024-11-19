@@ -17,8 +17,9 @@ def main(model: str):
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
     interface1 = "can1"
-    controller0 = arx5.Arx5CartesianController(model, interface0, "../models/arx5.urdf")
-    controller1 = arx5.Arx5CartesianController(model, interface1, "../models/arx5.urdf")
+    model = "../models/arx5.urdf"
+    controller0 = arx5.Arx5CartesianController(model, interface0, model)
+    controller1 = arx5.Arx5CartesianController(model, interface1, model)
     # controller0 = arx5.Arx5JointController(model, interface0)
     # controller1 = arx5.Arx5JointController(model, interface1)
     robot0_config = controller0.get_robot_config()
