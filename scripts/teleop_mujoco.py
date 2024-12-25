@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 import click
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 print(curr_dir)
@@ -24,9 +24,8 @@ import threading
 
 from pynput import keyboard
 
-dest = [0,0,0,0,0,0,0.0,0]
-
-def simulationThread():
+def simulationThread(queue):
+  dest = np.array([0,0,0,0,0,0,0.0,0])
   m = mujoco.MjModel.from_xml_path('./../models/R5a/urdf/R5a.xml')
   d = mujoco.MjData(m)
   # d.qfrc_applied[6] = 0
@@ -81,6 +80,8 @@ def simulationThread():
     step_cnt = 0
 
     while viewer.is_running():
+      if not queue.empty():
+        dest = queue.get()
       step_start = time.time()
 
       # mj_step can be replaced with code that also evaluates
@@ -99,16 +100,13 @@ def simulationThread():
         step_cnt += 1
     
 
-def teleOpThread():
+def teleOpThread(queue):
+    dest = np.array([0,0,0,0,0,0,0.0,0])
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
     model = "../arx5-sdk/models/arx5.urdf"
-    robot_config0 = arx5.RobotConfigFactory.get_instance().get_config("L5")
-    controller_config0 = arx5.ControllerConfigFactory.get_instance().get_config(
-        "joint_controller", robot_config0.joint_dof
-    )
-    controller0 = arx5.Arx5JointController(robot_config0, controller_config0, interface0)
-    # robot0_config = controller0.get_robot_config()
+    controller0 = arx5.Arx5CartesianController("L5", interface0, model)
+    robot0_config = controller0.get_robot_config()
     controller0_config = controller0.get_controller_config()
     controller0.reset_to_home()
 
@@ -138,18 +136,22 @@ def teleOpThread():
             if following_started:
                 # joint_state = controller0.get_state() 
                 # controller1.set_joint_cmd(joint_state)
-                joint_state = controller0.get_state()
-                joint_state.timestamp = 0.0
+                eef_state = controller0.get_eef_state()
+                eef_state.timestamp = 0.0
                 # print(eef_state.pose_6d)
-                # dest[:6] = joint_state.pos
-                print(joint_state.get_pos_ref())
+                joint_state = controller0.get_joint_state()
+                dest[:6] = joint_state.pos().copy()
+                dest[6] = eef_state.gripper_pos * 1.8 + 0.002
+                dest[7] = eef_state.gripper_pos * 1.8 + 0.002
+                queue.put(dest)
                 time.sleep(controller0_config.controller_dt)
             
 
 def main():
-    process_mujoco = [Process(target=simulationThread)]
+    queue = Queue()
+    process_mujoco = [Process(target=simulationThread, args=(queue,))]
     process_mujoco[0].start()
-    teleOpThread()
+    teleOpThread(queue)
     process_mujoco[0].join()
     # sim_thread = Thread(simulationThread())
     # teleop_thread = Thread(teleOpThread())
