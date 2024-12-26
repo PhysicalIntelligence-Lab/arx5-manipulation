@@ -17,9 +17,9 @@ def main(model: str):
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
     interface1 = "can1"
-    model = "../models/arx5.urdf"
-    controller0 = arx5.Arx5CartesianController(model, interface0, model)
-    controller1 = arx5.Arx5CartesianController(model, interface1, model)
+    urdf = "../models/arx5.urdf"
+    controller0 = arx5.Arx5CartesianController("L5", interface0, urdf)
+    controller1 = arx5.Arx5CartesianController("L5", interface1, urdf)
     # controller0 = arx5.Arx5JointController(model, interface0)
     # controller1 = arx5.Arx5JointController(model, interface1)
     robot0_config = controller0.get_robot_config()
@@ -63,6 +63,7 @@ def main(model: str):
                 # controller1.set_joint_cmd(joint_state)
                 eef_state = controller0.get_eef_state()
                 eef_state.timestamp = 0.0
+                eef_state.gripper_pos *= 5
                 controller1.set_eef_cmd(eef_state)
 
                 time.sleep(controller1_config.controller_dt)

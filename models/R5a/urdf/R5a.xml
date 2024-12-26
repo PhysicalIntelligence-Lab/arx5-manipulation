@@ -90,4 +90,10 @@
   <contact>
     <exclude body1="link7" body2="link8"/>
   </contact>
+  <contact>
+    <exclude body1="link7" body2="link6"/>
+  </contact>
+  <contact>
+    <exclude body1="link6" body2="link8"/>
+  </contact>
 </mujoco>

@@ -63,10 +63,10 @@ def simulationThread(queue):
           cfg.kp = 20
           cfg.kd = 2
         case 6:
-          cfg.kp = 500
+          cfg.kp = 2000
           cfg.kd = 50
         case 7:
-          cfg.kp = 500
+          cfg.kp = 2000
           cfg.kd = 50
       controllers.append(controller)
 
