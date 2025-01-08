@@ -28,6 +28,7 @@ arm_time = []
 
 def camera1_process(camera1_event, camera2_event, arm_event, finish_event):
     global cam1_time
+    root_path = "/home/wfy/data/"
     cam1_serial_number = '230322277180'
     
     # ...from Camera 1
@@ -57,11 +58,17 @@ def camera1_process(camera1_event, camera2_event, arm_event, finish_event):
         cam1_time.append(time.perf_counter())
         image = Image.fromarray(color_image_1)
         image.save("/home/wfy/data/1-"+str(end_time) + ".jpg")
+
+        np.save(root_path + "cam1_"+ str(end_time) + "_color.npy", color_image_1)
+        np.save(root_path + "cam1_" + str(end_time) + "_depth.npy", depth_image_1)
+        print(time.perf_counter() - start_time)
+
         if interval <= 0.1:
             time.sleep(0.1 - interval)
 
 def camera2_process(camera1_event, camera2_event, arm_event, finish_event):
     global cam2_time
+    root_path = "/home/wfy/data/"
     # ...from Camera 2
     cam2_serial_number = '230322271473'
     pipeline_2 = rs.pipeline()
@@ -90,10 +97,11 @@ def camera2_process(camera1_event, camera2_event, arm_event, finish_event):
         cam2_time.append(end_time)
         image = Image.fromarray(color_image_2)
         image.save("/home/wfy/data/2-"+str(end_time) + ".jpg")
+        np.save(root_path + "cam2_"+ str(end_time) + "_color.npy", color_image_2)
+        np.save(root_path + "cam2_" + str(end_time) + "_depth.npy", depth_image_2)
+
         if interval <= 0.1:
             time.sleep(0.1 - interval)
-
-
 
 def arm_process(camera1_event, camera2_event, arm_event, finish_event):
     global gripper_pos_data
@@ -134,6 +142,8 @@ def arm_process(camera1_event, camera2_event, arm_event, finish_event):
         eef_state = controller0.get_eef_state()
         eef_state.timestamp = 0.0
         eef_state.gripper_pos *= 5
+        eef_state.gripper_vel = 0.0
+        eef_state.gripper_torque = 0.0
         controller1.set_eef_cmd(eef_state)
 
         follower_joint_state = controller1.get_joint_state()
