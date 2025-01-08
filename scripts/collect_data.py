@@ -1,12 +1,12 @@
 import pyrealsense2 as rs
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 import os
 import sys
 from threading import Thread, Event
 from PIL import Image
 from pynput import keyboard
+import click
 
 curr_dir = os.getcwd()
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/arx5-sdk/python"
@@ -26,9 +26,9 @@ cam2_time = []
 arm_time = []
 
 
-def camera1_process(camera1_event, camera2_event, arm_event, finish_event):
+def camera1_thread(camera1_event, camera2_event, arm_event, finish_event, trial_num):
     global cam1_time
-    root_path = "/home/wfy/data/"
+    root_path = os.path.expanduser("~") + "/data/trial" + trial_num + "/"
     cam1_serial_number = '230322277180'
     
     # ...from Camera 1
@@ -57,18 +57,17 @@ def camera1_process(camera1_event, camera2_event, arm_event, finish_event):
         interval = end_time - start_time
         cam1_time.append(time.perf_counter())
         image = Image.fromarray(color_image_1)
-        image.save("/home/wfy/data/1-"+str(end_time) + ".jpg")
+        image.save(root_path + "1-"+str(end_time) + ".jpg")
 
         np.save(root_path + "cam1_"+ str(end_time) + "_color.npy", color_image_1)
         np.save(root_path + "cam1_" + str(end_time) + "_depth.npy", depth_image_1)
-        print(time.perf_counter() - start_time)
 
         if interval <= 0.1:
             time.sleep(0.1 - interval)
 
-def camera2_process(camera1_event, camera2_event, arm_event, finish_event):
+def camera2_thread(camera1_event, camera2_event, arm_event, finish_event, trial_num):
     global cam2_time
-    root_path = "/home/wfy/data/"
+    root_path = os.path.expanduser("~") + "/data/trial" + trial_num + "/"
     # ...from Camera 2
     cam2_serial_number = '230322271473'
     pipeline_2 = rs.pipeline()
@@ -96,14 +95,14 @@ def camera2_process(camera1_event, camera2_event, arm_event, finish_event):
         interval = end_time - start_time
         cam2_time.append(end_time)
         image = Image.fromarray(color_image_2)
-        image.save("/home/wfy/data/2-"+str(end_time) + ".jpg")
+        image.save(root_path + "2-"+str(end_time) + ".jpg")
         np.save(root_path + "cam2_"+ str(end_time) + "_color.npy", color_image_2)
         np.save(root_path + "cam2_" + str(end_time) + "_depth.npy", depth_image_2)
 
         if interval <= 0.1:
             time.sleep(0.1 - interval)
 
-def arm_process(camera1_event, camera2_event, arm_event, finish_event):
+def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
     global gripper_pos_data
     global gripper_vel_data
     global gripper_torque_data
@@ -129,7 +128,7 @@ def arm_process(camera1_event, camera2_event, arm_event, finish_event):
     camera2_event.wait()
 
     start_time = time.perf_counter()
-    print("Following Starts.")
+    print("Following Starts. Press `esc` to quit.")
 
     controller0.set_to_damping()
     gain = controller0.get_gain()
@@ -162,16 +161,23 @@ def arm_process(camera1_event, camera2_event, arm_event, finish_event):
     controller0.reset_to_home()
     controller1.reset_to_home()
 
-
-def main():
+@click.command()
+@click.argument("trial_num")  # ARX arm model: X5 or L5
+def main(trial_num: str):
+    root_path = os.path.expanduser("~") + "/data/trial"+ trial_num + "/"
+    if os.path.exists(root_path):
+        print("Trial already exist! Enter another trial number.")
+        return
+    else:
+        os.makedirs(root_path)
     camera1_ready_event = Event()
     camera2_ready_event = Event()
     arm_ready_event = Event()
     finish_event = Event()
 
-    t1 = Thread(target=camera1_process, args=(camera1_ready_event, camera2_ready_event, arm_ready_event, finish_event,))
-    t2 = Thread(target=camera2_process, args=(camera1_ready_event, camera2_ready_event, arm_ready_event, finish_event,))
-    t3 = Thread(target=arm_process, args=(camera1_ready_event, camera2_ready_event, arm_ready_event, finish_event,))
+    t1 = Thread(target=camera1_thread, args=(camera1_ready_event, camera2_ready_event, arm_ready_event, finish_event, trial_num, ))
+    t2 = Thread(target=camera2_thread, args=(camera1_ready_event, camera2_ready_event, arm_ready_event, finish_event, trial_num, ))
+    t3 = Thread(target=arm_thread, args=(camera1_ready_event, camera2_ready_event, arm_ready_event, finish_event, ))
 
     t1.start()
     t2.start()
@@ -196,7 +202,7 @@ def main():
     arm_time_np = np.array(arm_time)
     cam1_time_np = np.array(cam1_time)
     cam2_time_np = np.array(cam2_time)
-    root_path = "/home/wfy/data/"
+
     np.save(root_path + "gripper_pos.npy", gripper_pos_np)
     np.save(root_path + "gripper_vel.npy", gripper_vel_np)
     np.save(root_path + "gripper_torque.npy", gripper_torque_np)
