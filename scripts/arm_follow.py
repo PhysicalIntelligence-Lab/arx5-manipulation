@@ -64,6 +64,10 @@ def main(model: str):
                 eef_state = controller0.get_eef_state()
                 eef_state.timestamp = 0.0
                 eef_state.gripper_pos *= 5
+                # remove warning
+                eef_state.gripper_vel = 0.0
+                eef_state.gripper_torque = 0.0
+                # send command
                 controller1.set_eef_cmd(eef_state)
 
                 time.sleep(controller1_config.controller_dt)
