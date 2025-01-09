@@ -1,5 +1,6 @@
 import pyrealsense2 as rs
 import numpy as np
+from scipy.spatial.transform import Rotation
 import time
 import os
 import sys
@@ -18,6 +19,8 @@ import arx5_interface as arx5
 gripper_pos_data = []
 gripper_torque_data = []
 gripper_vel_data = []
+eef_pos_data = []
+eef_pose_data = []
 joint_pos_data = []
 joint_vel_data = []
 joint_torque_data = []
@@ -46,6 +49,7 @@ def camera1_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
     camera2_event.wait()
     arm_event.wait()
     
+    cnt = 0
     while not finish_event.is_set():    
         start_time = time.perf_counter()
         frames_1 = pipeline_1.wait_for_frames()
@@ -57,10 +61,11 @@ def camera1_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
         interval = end_time - start_time
         cam1_time.append(time.perf_counter())
         image = Image.fromarray(color_image_1)
-        image.save(root_path + "1-"+str(end_time) + ".jpg")
+        cnt += 1
+        image.save(root_path + "1-"+str(cnt) + ".jpg")
 
-        np.save(root_path + "cam1_"+ str(end_time) + "_color.npy", color_image_1)
-        np.save(root_path + "cam1_" + str(end_time) + "_depth.npy", depth_image_1)
+        np.save(root_path + "cam1_"+ str(cnt) + "_color.npy", color_image_1)
+        np.save(root_path + "cam1_" + str(cnt) + "_depth.npy", depth_image_1)
 
         if interval <= 0.1:
             time.sleep(0.1 - interval)
@@ -84,6 +89,7 @@ def camera2_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
     camera1_event.wait()
     arm_event.wait()
 
+    cnt = 0
     while not finish_event.is_set():   
         start_time = time.perf_counter() 
         frames_2 = pipeline_2.wait_for_frames()
@@ -95,9 +101,10 @@ def camera2_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
         interval = end_time - start_time
         cam2_time.append(end_time)
         image = Image.fromarray(color_image_2)
-        image.save(root_path + "2-"+str(end_time) + ".jpg")
-        np.save(root_path + "cam2_"+ str(end_time) + "_color.npy", color_image_2)
-        np.save(root_path + "cam2_" + str(end_time) + "_depth.npy", depth_image_2)
+        cnt += 1
+        image.save(root_path + "2-"+str(cnt) + ".jpg")
+        np.save(root_path + "cam2_"+ str(cnt) + "_color.npy", color_image_2)
+        np.save(root_path + "cam2_" + str(cnt) + "_depth.npy", depth_image_2)
 
         if interval <= 0.1:
             time.sleep(0.1 - interval)
@@ -109,6 +116,8 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
     global joint_pos_data
     global joint_vel_data
     global joint_torque_data
+    global eef_pos_data
+    global eef_pose_data
     global arm_time
     np.set_printoptions(precision=3, suppress=True)
     interface0 = "can0"
@@ -137,7 +146,6 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
 
     start_time = time.perf_counter()
     while not finish_event.is_set():
-        global_time = time.time()
         eef_state = controller0.get_eef_state()
         eef_state.timestamp = 0.0
         eef_state.gripper_pos *= 5
@@ -146,12 +154,18 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
         controller1.set_eef_cmd(eef_state)
 
         follower_joint_state = controller1.get_joint_state()
-        gripper_pos_data.append(follower_joint_state.gripper_pos)
-        gripper_vel_data.append(follower_joint_state.gripper_vel)
-        gripper_torque_data.append(follower_joint_state.gripper_torque)
+
         joint_pos_data.append(follower_joint_state.pos())
         joint_vel_data.append(follower_joint_state.vel())
         joint_torque_data.append(follower_joint_state.torque())
+
+        gripper_pos_data.append(follower_joint_state.gripper_pos)
+        gripper_vel_data.append(follower_joint_state.gripper_vel)
+        gripper_torque_data.append(follower_joint_state.gripper_torque)
+        
+        eef_data = eef_state.pose_6d()
+        eef_pose_data.append(Rotation.from_euler('xyz', eef_data[3:], degrees=False).as_quat())
+        eef_pos_data.append(eef_data[0:3])
 
         arm_time.append(time.perf_counter())
 
@@ -199,9 +213,17 @@ def main(trial_num: str):
     joint_pos_np = np.array(joint_pos_data)
     joint_vel_np = np.array(joint_vel_data)
     joint_torque_np = np.array(joint_torque_data)
+
+    eef_pos_np = np.array(eef_pos_data)
+    eef_pose_np = np.array(eef_pose_data)
+
     arm_time_np = np.array(arm_time)
     cam1_time_np = np.array(cam1_time)
     cam2_time_np = np.array(cam2_time)
+
+    traj_pos_np = np.hstack((joint_pos_np, gripper_pos_np.reshape((-1,1))))
+    traj_vel_np = np.hstack((joint_vel_np, gripper_vel_np.reshape((-1,1))))
+    traj_torque_np = np.hstack((joint_torque_np, gripper_torque_np.reshape((-1,1))))
 
     np.save(root_path + "gripper_pos.npy", gripper_pos_np)
     np.save(root_path + "gripper_vel.npy", gripper_vel_np)
@@ -209,6 +231,11 @@ def main(trial_num: str):
     np.save(root_path + "joint_pos.npy", joint_pos_np)
     np.save(root_path + "joint_vel.npy", joint_vel_np)
     np.save(root_path + "joint_torque.npy", joint_torque_np)
+    np.save(root_path + "traj_pos.npy", traj_pos_np)
+    np.save(root_path + "traj_vel.npy", traj_vel_np)
+    np.save(root_path + "traj_torque.npy", traj_torque_np)
+    np.save(root_path + "eef_pos.npy", eef_pos_data)
+    np.save(root_path + "eef_pose.npy", eef_pose_data)
     np.save(root_path + "arm_time_stamp.npy", arm_time_np)
     np.save(root_path + "cam1_time_stamp.npy", cam1_time_np)
     np.save(root_path + "cam2_time_stamp.npy", cam2_time_np)
