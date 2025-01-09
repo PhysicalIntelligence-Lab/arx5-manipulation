@@ -144,8 +144,9 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
     gain.kd()[:] *= 0.1
     controller0.set_gain(gain)  # set to passive
 
-    start_time = time.perf_counter()
+    
     while not finish_event.is_set():
+        start_time = time.perf_counter()
         eef_state = controller0.get_eef_state()
         eef_state.timestamp = 0.0
         eef_state.gripper_pos *= 5
@@ -169,7 +170,8 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
 
         arm_time.append(time.perf_counter())
 
-        time.sleep(controller1_config.controller_dt)
+        end_time = time.perf_counter()  
+        time.sleep(controller1_config.controller_dt - (end_time - start_time))
 
     print(f"Fllowing stopped!")
     controller0.reset_to_home()
