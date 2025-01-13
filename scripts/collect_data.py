@@ -27,6 +27,8 @@ joint_torque_data = []
 cam1_time = []
 cam2_time = []
 arm_time = []
+out_w = 320
+out_h = 240
 
 
 def camera1_thread(camera1_event, camera2_event, arm_event, finish_event, trial_num):
@@ -39,7 +41,7 @@ def camera1_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
     config_1 = rs.config()
     config_1.enable_device(cam1_serial_number)
     config_1.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    config_1.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config_1.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
 
     # Start camera1 pipeline
     pipeline_1.start(config_1)
@@ -57,15 +59,18 @@ def camera1_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
         color_frame_1 = frames_1.get_color_frame()
         depth_image_1 = np.asanyarray(depth_frame_1.get_data())
         color_image_1 = np.asanyarray(color_frame_1.get_data())
+        
+        image = Image.fromarray(color_image_1)
+        # image = image.resize((out_w,out_h))
+        cnt += 1
+        image.save(root_path + "1-"+str(cnt).zfill(4) + ".jpg")
+
+        np.save(root_path + "cam1_"+ str(cnt).zfill(4) + "_color.npy", color_image_1)
+        np.save(root_path + "cam1_" + str(cnt).zfill(4) + "_depth.npy", depth_image_1)
+
         end_time = time.perf_counter()
         interval = end_time - start_time
-        cam1_time.append(time.perf_counter())
-        image = Image.fromarray(color_image_1)
-        cnt += 1
-        image.save(root_path + "1-"+str(cnt) + ".jpg")
-
-        np.save(root_path + "cam1_"+ str(cnt) + "_color.npy", color_image_1)
-        np.save(root_path + "cam1_" + str(cnt) + "_depth.npy", depth_image_1)
+        cam1_time.append(end_time)
 
         if interval <= 0.1:
             time.sleep(0.1 - interval)
@@ -79,7 +84,7 @@ def camera2_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
     config_2 = rs.config()
     config_2.enable_device(cam2_serial_number)
     config_2.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    config_2.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config_2.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
 
     # Start camera1 pipeline
     pipeline_2.start(config_2)
@@ -97,14 +102,18 @@ def camera2_thread(camera1_event, camera2_event, arm_event, finish_event, trial_
         color_frame_2 = frames_2.get_color_frame()
         depth_image_2 = np.asanyarray(depth_frame_2.get_data())
         color_image_2 = np.asanyarray(color_frame_2.get_data())
+        
+        image = Image.fromarray(color_image_2)
+        # image = image.resize((out_w, out_h))
+        cnt += 1
+        image.save(root_path + "2-"+str(cnt).zfill(4) + ".jpg")
+        
+        np.save(root_path + "cam2_"+ str(cnt).zfill(4) + "_color.npy", color_image_2)
+        np.save(root_path + "cam2_" + str(cnt).zfill(4) + "_depth.npy", depth_image_2)
+
         end_time = time.perf_counter()
         interval = end_time - start_time
         cam2_time.append(end_time)
-        image = Image.fromarray(color_image_2)
-        cnt += 1
-        image.save(root_path + "2-"+str(cnt) + ".jpg")
-        np.save(root_path + "cam2_"+ str(cnt) + "_color.npy", color_image_2)
-        np.save(root_path + "cam2_" + str(cnt) + "_depth.npy", depth_image_2)
 
         if interval <= 0.1:
             time.sleep(0.1 - interval)
