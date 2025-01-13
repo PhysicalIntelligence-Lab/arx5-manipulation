@@ -1,29 +1,31 @@
 import os
 import zarr
 import numpy as np
+from tqdm import tqdm
 
 os.system('rm -rf pick_and_place_data.zarr')
-store = zarr.DirectoryStore('pick_and_place_data.zarr')
+output_path = os.path.expanduser("~") + "/data/pick_and_place_data.zarr"
+store = zarr.DirectoryStore(output_path)
 root = zarr.group(store=store)
 data_group = root.create_group('data')
 meta_group = root.create_group('meta')
-action_arr = data_group.create_dataset('action', shape=(0,7,), chunks=(100, 7), dtype='f4')
+action_arr = data_group.create_dataset('action', shape=(0,7,), chunks=(10, 7), dtype='f4')
 img1_arr = data_group.create_dataset('img1', shape = (0,480,640,3), chunks = (10, 480, 640, 3), dtype='f4')
 img2_arr = data_group.create_dataset('img2', shape = (0,480,640,3), chunks = (10, 480, 640, 3), dtype='f4')
 img1_depth_arr = data_group.create_dataset('depth1', shape = (0,480,640), chunks = (10, 480, 640), dtype='f4')
 img2_depth_arr = data_group.create_dataset('depth2', shape = (0,480,640), chunks = (10, 480, 640), dtype='f4')
-joint_pos_arr = data_group.create_dataset('joint_pos', shape = (0,7,), chunks = (100, 7), dtype='f4')
-joint_vel_arr = data_group.create_dataset('joint_vel', shape = (0,7,), chunks = (100, 7), dtype='f4')
+joint_pos_arr = data_group.create_dataset('joint_pos', shape = (0,7,), chunks = (10, 7), dtype='f4')
+joint_vel_arr = data_group.create_dataset('joint_vel', shape = (0,7,), chunks = (10, 7), dtype='f4')
 joint_torque_arr = data_group.create_dataset('joint_torque', shape = (0,20,7), chunks = (10,20,7), dtype='f8')
-episode_end_arr = meta_group.create_dataset('episode_end', shape = (0,), chunks = (100, ), dtype='i4')
+episode_end_arr = meta_group.create_dataset('episode_end', shape = (0,), chunks = (10, ), dtype='i4')
 
 episode_end_idx = []
 acc_episode_len = 0
 
-max_episode = 2
+max_episode = 10
 data_idx = 0
 
-for episode_num in range(1, max_episode+1):
+for episode_num in tqdm(range(1, max_episode+1), desc="Processing", unit="iter", ncols=100):
     dir_path = os.path.expanduser("~") + "/data/trial" + str(episode_num) + "/"
     cnt = 0
     files = os.listdir(dir_path)
