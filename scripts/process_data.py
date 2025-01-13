@@ -14,7 +14,7 @@ img1_depth_arr = data_group.create_dataset('depth1', shape = (0,480,640), chunks
 img2_depth_arr = data_group.create_dataset('depth2', shape = (0,480,640), chunks = (10, 480, 640), dtype='f4')
 joint_pos_arr = data_group.create_dataset('joint_pos', shape = (0,7,), chunks = (100, 7), dtype='f4')
 joint_vel_arr = data_group.create_dataset('joint_vel', shape = (0,7,), chunks = (100, 7), dtype='f4')
-joint_torque_arr = data_group.create_dataset('joint_torque', shape = (0,20,7), chunks = (100,20,7), dtype='f4')
+joint_torque_arr = data_group.create_dataset('joint_torque', shape = (0,20,7), chunks = (10,20,7), dtype='f8')
 episode_end_arr = meta_group.create_dataset('episode_end', shape = (0,), chunks = (100, ), dtype='i4')
 
 episode_end_idx = []
@@ -46,6 +46,10 @@ for episode_num in range(1, max_episode+1):
                 joint_vel = np.load(dir_path + "traj_vel.npy")
             elif file == "traj_torque.npy":
                 joint_torque = np.load(dir_path + "traj_torque.npy")
+            elif file == "eef_pose.npy":
+                eef_pose = np.load(dir_path + "eef_pose.npy")
+            elif file == "gripper_pos.npy":
+                gripper_pos = np.load(dir_path + "gripper_pos.npy")
             elif file[0:4] == "cam1" and file.endswith("_color.npy"):
                 cam1_file.append(file)
             elif file[0:4] == "cam1" and file.endswith("_depth.npy"):
@@ -101,10 +105,15 @@ for episode_num in range(1, max_episode+1):
     joint_pos_sample = zarr.array([joint_pos[s] for s in arm_idx])
     joint_vel_sample = zarr.array([joint_vel[s] for s in arm_idx])
     joint_torque_sample = zarr.array([joint_torque[s:s+20] for s in arm_idx])
+    action_sample = zarr.array(np.hstack(([eef_pose[s] for s in arm_idx], [gripper_pos.reshape((-1,1))[s] for s in arm_idx])))
 
-    # Resize Zarr (Action is the same as joint position)
+    # Implementation: Action is the same as joint position
+    # action_arr.resize((action_arr.shape[0] + episode_len, action_arr.shape[1]))
+    # action_arr[-episode_len:] = joint_pos_sample
+
+    # Implementation: Action space is eef pose, and gripper position
     action_arr.resize((action_arr.shape[0] + episode_len, action_arr.shape[1]))
-    action_arr[-episode_len:] = joint_pos_sample
+    action_arr[-episode_len:] = action_sample
 
     joint_pos_arr.resize((joint_pos_arr.shape[0] + episode_len, joint_pos_arr.shape[1]))
     joint_pos_arr[-episode_len:] = joint_pos_sample

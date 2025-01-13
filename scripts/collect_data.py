@@ -19,7 +19,6 @@ import arx5_interface as arx5
 gripper_pos_data = []
 gripper_torque_data = []
 gripper_vel_data = []
-eef_pos_data = []
 eef_pose_data = []
 joint_pos_data = []
 joint_vel_data = []
@@ -125,7 +124,6 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
     global joint_pos_data
     global joint_vel_data
     global joint_torque_data
-    global eef_pos_data
     global eef_pose_data
     global arm_time
     np.set_printoptions(precision=3, suppress=True)
@@ -173,9 +171,7 @@ def arm_thread(camera1_event, camera2_event, arm_event, finish_event):
         gripper_vel_data.append(follower_joint_state.gripper_vel)
         gripper_torque_data.append(follower_joint_state.gripper_torque)
         
-        eef_data = eef_state.pose_6d()
-        eef_pose_data.append(Rotation.from_euler('xyz', eef_data[3:], degrees=False).as_quat())
-        eef_pos_data.append(eef_data[0:3])
+        eef_pose_data.append(eef_state.pose_6d())
 
         arm_time.append(time.perf_counter())
 
@@ -225,7 +221,6 @@ def main(trial_num: str):
     joint_vel_np = np.array(joint_vel_data)
     joint_torque_np = np.array(joint_torque_data)
 
-    eef_pos_np = np.array(eef_pos_data)
     eef_pose_np = np.array(eef_pose_data)
 
     arm_time_np = np.array(arm_time)
@@ -245,8 +240,7 @@ def main(trial_num: str):
     np.save(root_path + "traj_pos.npy", traj_pos_np)
     np.save(root_path + "traj_vel.npy", traj_vel_np)
     np.save(root_path + "traj_torque.npy", traj_torque_np)
-    np.save(root_path + "eef_pos.npy", eef_pos_data)
-    np.save(root_path + "eef_pose.npy", eef_pose_data)
+    np.save(root_path + "eef_pose.npy", eef_pose_np)
     np.save(root_path + "arm_time_stamp.npy", arm_time_np)
     np.save(root_path + "cam1_time_stamp.npy", cam1_time_np)
     np.save(root_path + "cam2_time_stamp.npy", cam2_time_np)
