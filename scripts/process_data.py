@@ -17,7 +17,7 @@ img2_depth_arr = data_group.create_dataset('depth2', shape = (0,480,640), chunks
 joint_pos_arr = data_group.create_dataset('joint_pos', shape = (0,7,), chunks = (10, 7), dtype='f4')
 joint_vel_arr = data_group.create_dataset('joint_vel', shape = (0,7,), chunks = (10, 7), dtype='f4')
 joint_torque_arr = data_group.create_dataset('joint_torque', shape = (0,20,7), chunks = (10,20,7), dtype='f8')
-episode_end_arr = meta_group.create_dataset('episode_end', shape = (0,), chunks = (10, ), dtype='i4')
+episode_end_arr = meta_group.create_dataset('episode_ends', shape = (0,), chunks = (10, ), dtype='i4')
 
 episode_end_idx = []
 acc_episode_len = 0
